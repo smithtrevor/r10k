@@ -101,9 +101,12 @@ class Server < Sinatra::Base
     end
     data = JSON.parse(decoded, :quirks_mode => true)
 
-    # github sends a 'ref', stash sends an array in 'refChanges'
-    branch = ( data['ref'] || data['refChanges'][0]['refId'] ).sub('refs/heads/', '')
-
+    begin
+      # github sends a 'ref', stash sends an array in 'refChanges'
+      branch = ( data['ref'] || data['refChanges'][0]['refId'] ).sub('refs/heads/', '')
+    rescue => e
+      return { :status => :fail, :message => "WARNING: unable to detect ref in payload: #{e.message}" }.to_json
+    end
     # If prefix is enabled in our config file run the command to determine the prefix
     if $config['prefix']
       prefix = run_prefix_command(data.to_json)
